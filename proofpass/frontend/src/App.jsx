@@ -9,7 +9,7 @@ import {
 } from "react-router-dom";
 import "./App.css";
 
-const API_URL = "http://localhost:4000";
+const API_URL = "https://trust-pass.onrender.com";
 
 /* =========================
    HOME
@@ -18,9 +18,13 @@ const API_URL = "http://localhost:4000";
 function Home() {
   return (
     <main className="hero">
-      <div className="hero-content">
+      <div className="hero-orb hero-orb-one"></div>
+      <div className="hero-orb hero-orb-two"></div>
+
+      <div className="hero-content animate-up">
         <div className="badge">
-          🔐 Blockchain-verified credentials
+          <span className="badge-dot"></span>
+          Blockchain-verified credentials
         </div>
 
         <h1>
@@ -37,22 +41,42 @@ function Home() {
         <div className="hero-buttons">
           <Link to="/issue" className="button primary">
             Issue Credential
+            <span>→</span>
           </Link>
 
           <Link to="/verify" className="button secondary">
             Verify Credential
           </Link>
         </div>
+
+        <div className="hero-trust">
+          <div>
+            <span className="trust-dot"></span>
+            Secured on Ethereum
+          </div>
+
+          <div>
+            <span className="trust-dot"></span>
+            Tamper-resistant
+          </div>
+        </div>
       </div>
 
-      <div className="hero-card">
+      <div className="hero-card animate-card">
         <div className="card-glow"></div>
 
         <div className="credential-preview">
           <div className="preview-top">
-            <span>PROOFPASS</span>
-            <span className="verified-small">✓ VERIFIED</span>
+            <span className="preview-brand">
+              PROOF<span>PASS</span>
+            </span>
+
+            <span className="verified-small">
+              <span>✓</span> VERIFIED
+            </span>
           </div>
+
+          <div className="preview-line"></div>
 
           <p className="preview-label">
             CERTIFICATE OF ACHIEVEMENT
@@ -63,6 +87,11 @@ function Home() {
           <p className="preview-holder">
             Awarded to <strong>Ahmed Ibrahim</strong>
           </p>
+
+          <div className="preview-hash">
+            <span>BLOCKCHAIN PROOF</span>
+            <code>0xa0651c33...6186b03</code>
+          </div>
 
           <div className="preview-bottom">
             <div>
@@ -75,6 +104,8 @@ function Home() {
               <strong className="green">Verified</strong>
             </div>
           </div>
+
+          <div className="preview-corner"></div>
         </div>
       </div>
     </main>
@@ -88,7 +119,7 @@ function Home() {
 function IssueCredential() {
   return (
     <main className="page">
-      <div className="page-header">
+      <div className="page-header animate-up">
         <div className="badge">ISSUER</div>
 
         <h1>Issue a credential</h1>
@@ -158,9 +189,18 @@ function IssueForm() {
   return (
     <div className="form-container">
       <form
-        className="credential-form"
+        className="credential-form glass-card animate-up"
         onSubmit={handleSubmit}
       >
+        <div className="form-top">
+          <div>
+            <span className="form-eyebrow">NEW CREDENTIAL</span>
+            <h2>Credential details</h2>
+          </div>
+
+          <div className="secure-mark">⌁</div>
+        </div>
+
         <div className="input-group">
           <label>Holder name</label>
 
@@ -203,40 +243,60 @@ function IssueForm() {
           />
         </div>
 
+        <div className="form-note">
+          <span>✓</span>
+          Credential proof will be recorded on Ethereum Sepolia.
+        </div>
+
         <button
           type="submit"
           className="button primary submit-button"
           disabled={loading}
         >
-          {loading
-            ? "Issuing on blockchain..."
-            : "Issue Credential"}
+          {loading ? (
+            <>
+              <span className="button-spinner"></span>
+              Issuing on blockchain...
+            </>
+          ) : (
+            <>
+              Issue Credential
+              <span>→</span>
+            </>
+          )}
         </button>
 
         {error && (
           <div className="error-box">
-            {error}
+            <strong>Something went wrong</strong>
+            <span>{error}</span>
           </div>
         )}
       </form>
 
       {result && (
-        <div className="success-box">
+        <div className="success-box animate-success">
           <div className="success-icon">✓</div>
 
-          <h2>Credential issued!</h2>
+          <div>
+            <span className="success-eyebrow">
+              TRANSACTION CONFIRMED
+            </span>
 
-          <p>
-            Your credential has been stored and its proof has
-            been recorded on Ethereum Sepolia.
-          </p>
+            <h2>Credential issued</h2>
 
-          <Link
-            to={`/credential/${result.credential_hash}`}
-            className="button primary"
-          >
-            View Credential
-          </Link>
+            <p>
+              Your credential has been stored and its proof has
+              been recorded on Ethereum Sepolia.
+            </p>
+
+            <Link
+              to={`/credential/${result.credential_hash}`}
+              className="button primary"
+            >
+              View Credential →
+            </Link>
+          </div>
         </div>
       )}
     </div>
@@ -355,14 +415,14 @@ function CredentialPage() {
 
   return (
     <main className="page">
-      <div className="credential-page">
+      <div className="credential-page animate-up">
 
         <div className="credential-card">
 
           <div className="credential-header">
             <div>
               <span className="brand">
-                PROOFPASS
+                PROOF<span>PASS</span>
               </span>
 
               <p>CERTIFICATE OF ACHIEVEMENT</p>
@@ -382,6 +442,8 @@ function CredentialPage() {
           </div>
 
           <div className="credential-body">
+
+            <div className="credential-accent"></div>
 
             <p className="small-label">
               THIS CREDENTIAL CERTIFIES THAT
@@ -431,10 +493,12 @@ function CredentialPage() {
             </div>
 
             <div className="qr-wrapper">
-              <ReactQrCode
-                value={verificationUrl}
-                size={120}
-              />
+              <div className="qr-box">
+                <ReactQrCode
+                  value={verificationUrl}
+                  size={120}
+                />
+              </div>
 
               <span>SCAN TO VERIFY</span>
             </div>
@@ -444,9 +508,10 @@ function CredentialPage() {
         </div>
 
         <div className="transaction-box">
-          <span>
-            Ethereum Sepolia transaction
-          </span>
+          <div>
+            <span>BLOCKCHAIN TRANSACTION</span>
+            <strong>Ethereum Sepolia</strong>
+          </div>
 
           <a
             href={`https://sepolia.etherscan.io/tx/${credential.transaction_hash}`}
@@ -456,8 +521,6 @@ function CredentialPage() {
             View transaction ↗
           </a>
         </div>
-
-        {/* REVOCATION CONTROLS */}
 
         {!credential.revoked && (
           <div className="revoke-section">
@@ -562,7 +625,7 @@ function VerifyPage() {
   return (
     <main className="page">
 
-      <div className="page-header">
+      <div className="page-header animate-up">
 
         <div className="badge">
           VERIFIER
@@ -581,11 +644,11 @@ function VerifyPage() {
 
       <div className="verify-container">
 
-        <div className="verify-search">
+        <div className="verify-search glass-card">
 
           <input
             type="text"
-            placeholder="0x..."
+            placeholder="Paste credential hash · 0x..."
             value={hash}
             onChange={(event) =>
               setHash(event.target.value)
@@ -597,9 +660,14 @@ function VerifyPage() {
             onClick={verify}
             disabled={loading}
           >
-            {loading
-              ? "Verifying..."
-              : "Verify"}
+            {loading ? (
+              <>
+                <span className="button-spinner"></span>
+                Verifying...
+              </>
+            ) : (
+              "Verify →"
+            )}
           </button>
 
         </div>
@@ -693,8 +761,8 @@ function VerificationResult({ data }) {
     <div
       className={
         verified
-          ? "verification-result verified-result"
-          : "verification-result revoked-result"
+          ? "verification-result verified-result animate-success"
+          : "verification-result revoked-result animate-success"
       }
     >
 
@@ -706,6 +774,10 @@ function VerificationResult({ data }) {
         }
       >
         {verified ? "✓" : "✕"}
+      </div>
+
+      <div className="verification-status-label">
+        {verified ? "BLOCKCHAIN CONFIRMED" : "CREDENTIAL INVALID"}
       </div>
 
       <h2>
