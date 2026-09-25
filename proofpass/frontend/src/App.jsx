@@ -1,3 +1,4 @@
+
 import React from "react";
 import ReactQrCode from "react-qr-code";
 import {
@@ -142,6 +143,7 @@ function IssueForm() {
   const [loading, setLoading] = React.useState(false);
   const [result, setResult] = React.useState(null);
   const [error, setError] = React.useState("");
+  const [copied, setCopied] = React.useState(false);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -149,6 +151,7 @@ function IssueForm() {
     setLoading(true);
     setError("");
     setResult(null);
+    setCopied(false);
 
     try {
       const response = await fetch(
@@ -183,6 +186,26 @@ function IssueForm() {
       setError(error.message);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function copyTransactionHash() {
+    if (!result?.transaction_hash) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(
+        result.transaction_hash
+      );
+
+      setCopied(true);
+
+      setTimeout(() => {
+        setCopied(false);
+      }, 2000);
+    } catch (error) {
+      setError("Failed to copy transaction hash");
     }
   }
 
@@ -290,6 +313,33 @@ function IssueForm() {
               been recorded on Ethereum Sepolia.
             </p>
 
+            <div className="issued-proof">
+              <span>TRANSACTION HASH</span>
+
+              <code>
+                {result.transaction_hash}
+              </code>
+
+              <div className="transaction-actions">
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={copyTransactionHash}
+                >
+                  {copied ? "✓ Copied" : "Copy Hash"}
+                </button>
+
+                <a
+                  href={`https://sepolia.etherscan.io/tx/${result.transaction_hash}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="secondary-button"
+                >
+                  View on Etherscan ↗
+                </a>
+              </div>
+            </div>
+
             <Link
               to={`/credential/${result.credential_hash}`}
               className="button primary"
@@ -316,6 +366,7 @@ function CredentialPage() {
   const [error, setError] = React.useState("");
   const [revokeSuccess, setRevokeSuccess] =
     React.useState(false);
+  const [copied, setCopied] = React.useState(false);
 
   async function fetchCredential() {
     try {
@@ -382,6 +433,26 @@ function CredentialPage() {
       setError(error.message);
     } finally {
       setRevoking(false);
+    }
+  }
+
+  async function copyTransactionHash() {
+    if (!credential?.transaction_hash) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(
+        credential.transaction_hash
+      );
+
+      setCopied(true);
+
+      setTimeout(() => {
+        setCopied(false);
+      }, 2000);
+    } catch (error) {
+      setError("Failed to copy transaction hash");
     }
   }
 
@@ -510,16 +581,32 @@ function CredentialPage() {
         <div className="transaction-box">
           <div>
             <span>BLOCKCHAIN TRANSACTION</span>
+
             <strong>Ethereum Sepolia</strong>
+
+            <code>
+              {credential.transaction_hash}
+            </code>
           </div>
 
-          <a
-            href={`https://sepolia.etherscan.io/tx/${credential.transaction_hash}`}
-            target="_blank"
-            rel="noreferrer"
-          >
-            View transaction ↗
-          </a>
+          <div className="transaction-actions">
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={copyTransactionHash}
+            >
+              {copied ? "✓ Copied" : "Copy Hash"}
+            </button>
+
+            <a
+              href={`https://sepolia.etherscan.io/tx/${credential.transaction_hash}`}
+              target="_blank"
+              rel="noreferrer"
+              className="secondary-button"
+            >
+              View on Etherscan ↗
+            </a>
+          </div>
         </div>
 
         {!credential.revoked && (
@@ -594,6 +681,7 @@ function VerifyPage() {
 
   async function verify() {
     if (!hash.trim()) {
+      setError("Please enter a credential hash");
       return;
     }
 
@@ -653,6 +741,11 @@ function VerifyPage() {
             onChange={(event) =>
               setHash(event.target.value)
             }
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                verify();
+              }
+            }}
           />
 
           <button
@@ -699,6 +792,9 @@ function VerifyByHash({ hash }) {
   React.useEffect(() => {
     async function verifyCredential() {
       try {
+        setLoading(true);
+        setError("");
+
         const response = await fetch(
           `${API_URL}/api/credentials/${hash}`
         );
@@ -734,7 +830,8 @@ function VerifyByHash({ hash }) {
 
       {error && (
         <div className="error-box">
-          {error}
+          <strong>Verification failed</strong>
+          <span>{error}</span>
         </div>
       )}
 
@@ -757,6 +854,24 @@ function VerificationResult({ data }) {
   const verified =
     blockchain.valid && !credential.revoked;
 
+  const [copied, setCopied] = React.useState(false);
+
+  async function copyTransactionHash() {
+    try {
+      await navigator.clipboard.writeText(
+        credential.transaction_hash
+      );
+
+      setCopied(true);
+
+      setTimeout(() => {
+        setCopied(false);
+      }, 2000);
+    } catch (error) {
+      console.error("Failed to copy transaction hash", error);
+    }
+  }
+
   return (
     <div
       className={
@@ -777,7 +892,9 @@ function VerificationResult({ data }) {
       </div>
 
       <div className="verification-status-label">
-        {verified ? "BLOCKCHAIN CONFIRMED" : "CREDENTIAL INVALID"}
+        {verified
+          ? "BLOCKCHAIN CONFIRMED"
+          : "CREDENTIAL INVALID"}
       </div>
 
       <h2>
@@ -796,6 +913,7 @@ function VerificationResult({ data }) {
 
         <div>
           <span>Holder</span>
+
           <strong>
             {credential.holder_name}
           </strong>
@@ -803,6 +921,7 @@ function VerificationResult({ data }) {
 
         <div>
           <span>Credential</span>
+
           <strong>
             {credential.credential_name}
           </strong>
@@ -810,6 +929,7 @@ function VerificationResult({ data }) {
 
         <div>
           <span>Issuer</span>
+
           <strong>
             {credential.issuer_name}
           </strong>
@@ -817,6 +937,7 @@ function VerificationResult({ data }) {
 
         <div>
           <span>Blockchain issuer</span>
+
           <strong className="address">
             {blockchain.issuer}
           </strong>
@@ -824,6 +945,7 @@ function VerificationResult({ data }) {
 
         <div>
           <span>Issued</span>
+
           <strong>
             {new Date(
               credential.created_at
@@ -833,6 +955,7 @@ function VerificationResult({ data }) {
 
         <div>
           <span>Status</span>
+
           <strong
             className={
               verified
@@ -848,17 +971,49 @@ function VerificationResult({ data }) {
 
       </div>
 
-      <a
-        href={`https://sepolia.etherscan.io/tx/${credential.transaction_hash}`}
-        target="_blank"
-        rel="noreferrer"
-        className="secondary-button"
-      >
-        View blockchain transaction ↗
-      </a>
+      <div className="verification-proof">
+
+        <span>BLOCKCHAIN PROOF</span>
+
+        <code>
+          {credential.transaction_hash}
+        </code>
+
+        <div className="transaction-actions">
+
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={copyTransactionHash}
+          >
+            {copied ? "✓ Copied" : "Copy Hash"}
+          </button>
+
+          <a
+            href={`https://sepolia.etherscan.io/tx/${credential.transaction_hash}`}
+            target="_blank"
+            rel="noreferrer"
+            className="secondary-button"
+          >
+            View on Etherscan ↗
+          </a>
+
+        </div>
+
+      </div>
 
     </div>
   );
+}
+
+/* =========================
+   VERIFY ROUTE
+========================= */
+
+function VerifyRoute() {
+  const { hash } = useParams();
+
+  return <VerifyByHash hash={hash} />;
 }
 
 /* =========================
@@ -879,6 +1034,7 @@ function App() {
         </Link>
 
         <div className="nav-links">
+
           <Link to="/issue">
             Issue
           </Link>
@@ -886,6 +1042,7 @@ function App() {
           <Link to="/verify">
             Verify
           </Link>
+
         </div>
 
       </nav>
@@ -920,18 +1077,6 @@ function App() {
       </Routes>
 
     </BrowserRouter>
-  );
-}
-
-/* =========================
-   VERIFY ROUTE
-========================= */
-
-function VerifyRoute() {
-  const { hash } = useParams();
-
-  return (
-    <VerifyByHash hash={hash} />
   );
 }
 
