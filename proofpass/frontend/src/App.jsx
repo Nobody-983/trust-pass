@@ -1,4 +1,3 @@
-
 import React from "react";
 import ReactQrCode from "react-qr-code";
 import {
@@ -154,20 +153,17 @@ function IssueForm() {
     setCopied(false);
 
     try {
-      const response = await fetch(
-        `${API_URL}/api/credentials`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            holderName,
-            credentialName,
-            issuerName,
-          }),
-        }
-      );
+      const response = await fetch(`${API_URL}/api/credentials`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          holderName,
+          credentialName,
+          issuerName,
+        }),
+      });
 
       const data = await response.json();
 
@@ -189,14 +185,14 @@ function IssueForm() {
     }
   }
 
-  async function copyTransactionHash() {
-    if (!result?.transaction_hash) {
+  async function copyBlockchainProof() {
+    if (!result?.credential_hash) {
       return;
     }
 
     try {
       await navigator.clipboard.writeText(
-        result.transaction_hash
+        result.credential_hash
       );
 
       setCopied(true);
@@ -204,8 +200,8 @@ function IssueForm() {
       setTimeout(() => {
         setCopied(false);
       }, 2000);
-    } catch (error) {
-      setError("Failed to copy transaction hash");
+    } catch {
+      setError("Failed to copy blockchain proof");
     }
   }
 
@@ -217,7 +213,10 @@ function IssueForm() {
       >
         <div className="form-top">
           <div>
-            <span className="form-eyebrow">NEW CREDENTIAL</span>
+            <span className="form-eyebrow">
+              NEW CREDENTIAL
+            </span>
+
             <h2>Credential details</h2>
           </div>
 
@@ -301,7 +300,7 @@ function IssueForm() {
         <div className="success-box animate-success">
           <div className="success-icon">✓</div>
 
-          <div>
+          <div className="success-content">
             <span className="success-eyebrow">
               TRANSACTION CONFIRMED
             </span>
@@ -314,19 +313,17 @@ function IssueForm() {
             </p>
 
             <div className="issued-proof">
-              <span>TRANSACTION HASH</span>
+              <span>BLOCKCHAIN PROOF</span>
 
-              <code>
-                {result.transaction_hash}
-              </code>
+              <code>{result.credential_hash}</code>
 
               <div className="transaction-actions">
                 <button
                   type="button"
                   className="secondary-button"
-                  onClick={copyTransactionHash}
+                  onClick={copyBlockchainProof}
                 >
-                  {copied ? "✓ Copied" : "Copy Hash"}
+                  {copied ? "✓ Copied" : "Copy Proof"}
                 </button>
 
                 <a
@@ -335,7 +332,7 @@ function IssueForm() {
                   rel="noreferrer"
                   className="secondary-button"
                 >
-                  View on Etherscan ↗
+                  View Transaction ↗
                 </a>
               </div>
             </div>
@@ -436,26 +433,6 @@ function CredentialPage() {
     }
   }
 
-  async function copyTransactionHash() {
-    if (!credential?.transaction_hash) {
-      return;
-    }
-
-    try {
-      await navigator.clipboard.writeText(
-        credential.transaction_hash
-      );
-
-      setCopied(true);
-
-      setTimeout(() => {
-        setCopied(false);
-      }, 2000);
-    } catch (error) {
-      setError("Failed to copy transaction hash");
-    }
-  }
-
   if (loading) {
     return (
       <main className="page centered">
@@ -481,8 +458,33 @@ function CredentialPage() {
   const verified =
     blockchain.valid && !credential.revoked;
 
+  /*
+    IMPORTANT:
+    The QR code contains the credential proof,
+    not the transaction hash.
+  */
   const verificationUrl =
-    `${window.location.origin}/verify/${hash}`;
+    `${window.location.origin}/verify/${credential.credential_hash}`;
+
+  async function copyBlockchainProof() {
+    if (!credential?.credential_hash) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(
+        credential.credential_hash
+      );
+
+      setCopied(true);
+
+      setTimeout(() => {
+        setCopied(false);
+      }, 2000);
+    } catch {
+      setError("Failed to copy blockchain proof");
+    }
+  }
 
   return (
     <main className="page">
@@ -520,19 +522,16 @@ function CredentialPage() {
               THIS CREDENTIAL CERTIFIES THAT
             </p>
 
-            <h1>
-              {credential.holder_name}
-            </h1>
+            <h1>{credential.holder_name}</h1>
 
             <p className="small-label">
               HAS SUCCESSFULLY EARNED
             </p>
 
-            <h2>
-              {credential.credential_name}
-            </h2>
+            <h2>{credential.credential_name}</h2>
 
             <div className="credential-info">
+
               <div>
                 <span>ISSUED BY</span>
                 <strong>
@@ -548,30 +547,42 @@ function CredentialPage() {
                   ).toLocaleDateString()}
                 </strong>
               </div>
+
             </div>
 
           </div>
 
           <div className="credential-footer">
 
-            <div>
+            <div className="credential-proof">
               <span>BLOCKCHAIN PROOF</span>
 
               <code>
-                {credential.credential_hash.slice(0, 18)}
-                ...
+                {credential.credential_hash}
               </code>
+
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={copyBlockchainProof}
+              >
+                {copied ? "✓ Copied" : "Copy Proof"}
+              </button>
             </div>
 
             <div className="qr-wrapper">
+
               <div className="qr-box">
                 <ReactQrCode
                   value={verificationUrl}
                   size={120}
+                  bgColor="#ffffff"
+                  fgColor="#000000"
                 />
               </div>
 
               <span>SCAN TO VERIFY</span>
+
             </div>
 
           </div>
@@ -579,7 +590,8 @@ function CredentialPage() {
         </div>
 
         <div className="transaction-box">
-          <div>
+
+          <div className="transaction-info">
             <span>BLOCKCHAIN TRANSACTION</span>
 
             <strong>Ethereum Sepolia</strong>
@@ -590,13 +602,6 @@ function CredentialPage() {
           </div>
 
           <div className="transaction-actions">
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={copyTransactionHash}
-            >
-              {copied ? "✓ Copied" : "Copy Hash"}
-            </button>
 
             <a
               href={`https://sepolia.etherscan.io/tx/${credential.transaction_hash}`}
@@ -606,7 +611,9 @@ function CredentialPage() {
             >
               View on Etherscan ↗
             </a>
+
           </div>
+
         </div>
 
         {!credential.revoked && (
@@ -652,7 +659,7 @@ function CredentialPage() {
         )}
 
         {revokeSuccess && (
-          <div className="success-box">
+          <div className="success-box animate-success">
             Credential successfully revoked on
             Ethereum Sepolia.
           </div>
@@ -681,7 +688,7 @@ function VerifyPage() {
 
   async function verify() {
     if (!hash.trim()) {
-      setError("Please enter a credential hash");
+      setError("Please enter a blockchain proof");
       return;
     }
 
@@ -724,7 +731,7 @@ function VerifyPage() {
         </h1>
 
         <p>
-          Enter a credential hash or scan a ProofPass QR
+          Enter a blockchain proof or scan a ProofPass QR
           code to verify its authenticity.
         </p>
 
@@ -736,7 +743,7 @@ function VerifyPage() {
 
           <input
             type="text"
-            placeholder="Paste credential hash · 0x..."
+            placeholder="Paste blockchain proof · 0x..."
             value={hash}
             onChange={(event) =>
               setHash(event.target.value)
@@ -781,7 +788,7 @@ function VerifyPage() {
 }
 
 /* =========================
-   VERIFY BY QR / URL
+   VERIFY BY HASH / QR
 ========================= */
 
 function VerifyByHash({ hash }) {
@@ -856,10 +863,10 @@ function VerificationResult({ data }) {
 
   const [copied, setCopied] = React.useState(false);
 
-  async function copyTransactionHash() {
+  async function copyBlockchainProof() {
     try {
       await navigator.clipboard.writeText(
-        credential.transaction_hash
+        credential.credential_hash
       );
 
       setCopied(true);
@@ -867,8 +874,8 @@ function VerificationResult({ data }) {
       setTimeout(() => {
         setCopied(false);
       }, 2000);
-    } catch (error) {
-      console.error("Failed to copy transaction hash", error);
+    } catch {
+      console.error("Failed to copy blockchain proof");
     }
   }
 
@@ -913,31 +920,21 @@ function VerificationResult({ data }) {
 
         <div>
           <span>Holder</span>
-
-          <strong>
-            {credential.holder_name}
-          </strong>
+          <strong>{credential.holder_name}</strong>
         </div>
 
         <div>
           <span>Credential</span>
-
-          <strong>
-            {credential.credential_name}
-          </strong>
+          <strong>{credential.credential_name}</strong>
         </div>
 
         <div>
           <span>Issuer</span>
-
-          <strong>
-            {credential.issuer_name}
-          </strong>
+          <strong>{credential.issuer_name}</strong>
         </div>
 
         <div>
           <span>Blockchain issuer</span>
-
           <strong className="address">
             {blockchain.issuer}
           </strong>
@@ -945,7 +942,6 @@ function VerificationResult({ data }) {
 
         <div>
           <span>Issued</span>
-
           <strong>
             {new Date(
               credential.created_at
@@ -955,7 +951,6 @@ function VerificationResult({ data }) {
 
         <div>
           <span>Status</span>
-
           <strong
             className={
               verified
@@ -976,7 +971,7 @@ function VerificationResult({ data }) {
         <span>BLOCKCHAIN PROOF</span>
 
         <code>
-          {credential.transaction_hash}
+          {credential.credential_hash}
         </code>
 
         <div className="transaction-actions">
@@ -984,9 +979,9 @@ function VerificationResult({ data }) {
           <button
             type="button"
             className="secondary-button"
-            onClick={copyTransactionHash}
+            onClick={copyBlockchainProof}
           >
-            {copied ? "✓ Copied" : "Copy Hash"}
+            {copied ? "✓ Copied" : "Copy Proof"}
           </button>
 
           <a
@@ -995,7 +990,7 @@ function VerificationResult({ data }) {
             rel="noreferrer"
             className="secondary-button"
           >
-            View on Etherscan ↗
+            View Transaction ↗
           </a>
 
         </div>
